@@ -4,11 +4,21 @@
     "description": "Modal editing mode for Colemak keyboard",
     "version": "0.1.0",
     "publisher": "jakesong",
+    "license": "MIT",
+    "keywords": [
+        "colemak",
+        "modal"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/appledelhi/neiumode.git"
+    },
     "engines": {
         "vscode": "^1.22.0"
     },
     "categories": [
-        "Other"
+        "Other",
+        "Keymaps"
     ],
     "activationEvents": [
         "*"
@@ -38,9 +48,9 @@
         "test": "npm run compile && node ./node_modules/vscode/bin/test"
     },
     "devDependencies": {
-        "typescript": "^2.6.1",
-        "vscode": "^1.1.6",
-        "@types/node": "^7.0.43",
-        "@types/mocha": "^2.2.42"
+        "typescript": "^2.8.3",
+        "vscode": "^1.1.16",
+        "@types/node": "^9.6.7",
+        "@types/mocha": "^5.2.0"
     }
 }
