@@ -5,5 +5,8 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
-## [1.0.0]
+## [0.1.0]
 - Initial release
+
+## [0.2.0]
+- Added commands `space b n`, `space b i` for previous editor, next editor.
