@@ -3,10 +3,13 @@ import * as vscode from 'vscode';
 export class ModalEditor {
     private _modal: boolean;
     private _editor: vscode.TextEditor;
+    private _statusBar: vscode.Disposable;
+    private _currentCommand: (any) => void;
 
     constructor(editor: vscode.TextEditor) {
         this._editor = editor;
         this._modal = true;
+        this._currentCommand = this.handleCommands;
         this.setCursor();
     }
 
@@ -15,7 +18,14 @@ export class ModalEditor {
             vscode.commands.executeCommand('default:type', args);
             return;
         }
+        this._currentCommand(args);
+    }
+
+    handleCommands(args: any) {
         switch (args.text) {
+            case ' ':
+                this.gotoHandleSpaceCommands();
+                break;
             case 'a':
                 vscode.commands.executeCommand('editor.action.commentLine');
                 vscode.commands.executeCommand('cursorDown');
@@ -88,6 +98,50 @@ export class ModalEditor {
         }
     }
 
+    handleSpaceCommands(args: any) {
+        switch (args.text) {
+            case 'b':
+                this.gotoHandleSpaceBCommands();
+                break;
+            default:
+                this.gotoHandleCommands();
+        }
+    }
+
+    handleSpaceBCommands(args: any) {
+        switch (args.text) {
+            case 'n':
+                vscode.commands.executeCommand('workbench.action.previousEditor');
+                break;
+            case 'i':
+                vscode.commands.executeCommand('workbench.action.nextEditor');
+                break;
+        }
+        this.gotoHandleCommands();
+    }
+
+    gotoHandleCommands() {
+        this._currentCommand = this.handleCommands;
+        this.showStatusBar("");
+    }
+
+    gotoHandleSpaceCommands() {
+        this._currentCommand = this.handleSpaceCommands;
+        this.showStatusBar("b: buffer")
+    }
+
+    gotoHandleSpaceBCommands() {
+        this._currentCommand = this.handleSpaceBCommands;
+        this.showStatusBar("n: previous buffer   i: next buffer")
+    }
+
+    showStatusBar(msg: string) {
+        if (this._statusBar) {
+            this._statusBar.dispose();
+        }
+        this._statusBar = vscode.window.setStatusBarMessage(msg);
+    }
+
     handleToggle() {
         this._modal = !this._modal;
         this.setCursor();
@@ -106,5 +160,6 @@ export class ModalEditor {
     }
     
     dispose() {
+        this._statusBar.dispose();
     }
 }
