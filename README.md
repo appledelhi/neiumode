@@ -13,6 +13,46 @@ one for executing commands and one for entering texts(like `vi`). You toggle bet
 Command mode layout
 ![Command mode layout](images/keyboard.png)
 
+## Key bindings
+
+| key | description  |
+|---|---|
+| a  | Comment current line.  |
+| b  | Select current line.  |
+| c  | Copy selection. If no selection, copy current line.  |
+| d  | Start selection mode.  |
+| e  | Move cursor down.  |
+| f  | Delete word left.  |
+| g  | Delete line right.  |
+| h  | Move cursor to the beginning of line.  |
+| i  | Move cursor right.  |
+| j  | Move cursor page up.  |
+| J  | Move cursor to the beginning of file.  |
+| k  | Move cursor page down.  |
+| K  | Move cursor to the end of file.  |
+| l  | Move cursor word left.  |
+| m  |   |
+| n  | Move cursor left.  |
+| o  | Move cursor to the end of line.  |
+| p  |   |
+| q  |   |
+| r  |   |
+| s  | Delete character right.  |
+| t  | Delete word right.  |
+| u  | Move cursor up.  |
+| v  | Paste.  |
+| w  |   |
+| x  | Cut.  |
+| y  | Move cursor word right.  |
+| z  | Undo.  |
+| /  | Find.  |
+| *  | Find current word.  |
+| home  | Toggle insert/command mode.  |
+| space b n  | Previous editor.  |
+| space b i  | Next editor.  |
+| space b u  | Navigate back.  |
+| space b e  | Navigate forward.  |
+
 ## Extension Settings
 
 You can change the key for toggling modes:
@@ -29,6 +69,11 @@ Initial release.
 ### 0.2.0
 
 Added commands `space b n`, `space b i` for previous editor, next editor.
+
+### 0.3.0
+
+Added command `space b u`, `space b e` for navigate back, navigate forward.
+Added command `d` for starting selection.
 
 ## Acknowledgment
 

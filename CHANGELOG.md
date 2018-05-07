@@ -10,3 +10,8 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [0.2.0]
 - Added commands `space b n`, `space b i` for previous editor, next editor.
+
+## [0.3.0]
+
+- Added command `space b u`, `space b e` for navigate back, navigate forward.
+- Added command `d` for starting selection.
