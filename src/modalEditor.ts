@@ -35,6 +35,10 @@ export class ModalEditor {
                 break;
             case 'c':
                 vscode.commands.executeCommand('editor.action.clipboardCopyAction');
+                vscode.commands.executeCommand('cancelSelection');
+                break;
+            case 'd':
+                this.gotoHandleSelectCommands();
                 break;
             case 'e':
                 vscode.commands.executeCommand('cursorDown');
@@ -98,6 +102,57 @@ export class ModalEditor {
         }
     }
 
+    handleSelectCommands(args: any) {
+        switch (args.text) {
+            case 'd':
+                if (this._editor.selection.isEmpty) {
+                    this.gotoHandleCommands();
+                } else {
+                    vscode.commands.executeCommand('cancelSelection');
+                }
+                break;
+            case 'e':
+                vscode.commands.executeCommand('cursorDownSelect');
+                break;
+            case 'h':
+                vscode.commands.executeCommand('cursorHomeSelect');
+                break;
+            case 'i':
+                vscode.commands.executeCommand('cursorRightSelect');
+                break;
+            case 'j':
+                vscode.commands.executeCommand('cursorPageUpSelect');
+                break;
+            case 'J':
+                vscode.commands.executeCommand('cursorTopSelect');
+                break;
+            case 'k':
+                vscode.commands.executeCommand('cursorPageDownSelect');
+                break;
+            case 'K':
+                vscode.commands.executeCommand('cursorBottomSelect');
+                break;
+            case 'l':
+                vscode.commands.executeCommand('cursorWordStartLeftSelect');
+                break;
+            case 'n':
+                vscode.commands.executeCommand('cursorLeftSelect');
+                break;
+            case 'o':
+                vscode.commands.executeCommand('cursorEndSelect');
+                break;
+            case 'u':
+                vscode.commands.executeCommand('cursorUpSelect');
+                break;
+            case 'y':
+                vscode.commands.executeCommand('cursorWordEndRightSelect');
+                break;
+            default:
+                this.gotoHandleCommands();
+                this.handleCommands(args);
+        }
+    }
+
     handleSpaceCommands(args: any) {
         switch (args.text) {
             case 'b':
@@ -116,6 +171,12 @@ export class ModalEditor {
             case 'i':
                 vscode.commands.executeCommand('workbench.action.nextEditor');
                 break;
+            case 'u':
+                vscode.commands.executeCommand('workbench.action.navigateBack');
+                break;
+            case 'e':
+                vscode.commands.executeCommand('workbench.action.navigateForward');
+                break;
         }
         this.gotoHandleCommands();
     }
@@ -125,6 +186,11 @@ export class ModalEditor {
         this.showStatusBar("");
     }
 
+    gotoHandleSelectCommands() {
+        this._currentCommand = this.handleSelectCommands;
+        this.showStatusBar("Select");
+    }
+
     gotoHandleSpaceCommands() {
         this._currentCommand = this.handleSpaceCommands;
         this.showStatusBar("b: buffer")
@@ -132,7 +198,7 @@ export class ModalEditor {
 
     gotoHandleSpaceBCommands() {
         this._currentCommand = this.handleSpaceBCommands;
-        this.showStatusBar("n: previous buffer   i: next buffer")
+        this.showStatusBar("n: previous buffer   i: next buffer   u: navigate back  e: navigate forward")
     }
 
     showStatusBar(msg: string) {
