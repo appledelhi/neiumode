@@ -211,10 +211,15 @@ export class ModalEditor {
     handleToggle() {
         this._modal = !this._modal;
         this.setCursor();
+        this.gotoHandleCommands();
     }
 
     handleActiveEditorChange() {
         this.setCursor();
+    }
+
+    setEditor(editor: vscode.TextEditor) {
+        this._editor = editor;
     }
 
     setCursor() {

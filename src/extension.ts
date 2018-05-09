@@ -53,13 +53,14 @@ class ModalEditorManager {
             return null;
         }
         let key = editor.document.fileName + (editor.viewColumn || vscode.ViewColumn.One);
-        console.log(key);
         let modalEditor = this._modalEditors[key];
-        if (!modalEditor) {
+        if (modalEditor) {
+            modalEditor.setEditor(editor);
+        } else {
             modalEditor = new ModalEditor(editor);
-            console.log("modalEditor " + modalEditor);
             this._modalEditors[key] = modalEditor;
         }
+
         return modalEditor;
     }
 
