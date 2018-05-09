@@ -75,6 +75,10 @@ Added commands `space b n`, `space b i` for previous editor, next editor.
 Added command `space b u`, `space b e` for navigate back, navigate forward.
 Added command `d` for starting selection.
 
+### 0.3.1
+
+Bug fixes.
+
 ## Acknowledgment
 
 This package has been influenced by the following key bindings.

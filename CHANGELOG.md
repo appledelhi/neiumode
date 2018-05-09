@@ -15,3 +15,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 - Added command `space b u`, `space b e` for navigate back, navigate forward.
 - Added command `d` for starting selection.
+
+## [0.3.1]
+
+- Bug fixes.
