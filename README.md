@@ -1,12 +1,12 @@
 # Neiu Mode README
 
-Neiu Mode is a modal editing mode for Colemak keyboard. There are two modes,
+Neiu Mode is a modal editing mode for Colemak keyboard. Modal editing means there are two modes,
 one for executing commands and one for entering texts(like `vi`). You toggle between them with `home` key.
 
 ## Features
 
-* Designed for Colemak keyboard.
-* Ergonomic key layout.
+* Ergonomic key layout (for Colemak keyboard).
+* Vi like repeat command. For example: place the cursor to a word, delete it with `t` and insert `abc`. Then move cursor to another word and press `r` to repeat.
 * Developed on split keyboard(eg. [Kinesys Advantage](https://www.kinesis-ergo.com/shop/advantage2/)) but can be used for normal keyboard.
 * Spacemacs like key bindings.
 
@@ -36,7 +36,7 @@ Command mode layout
 | o  | Move cursor to the end of line.  |
 | p  |   |
 | q  |   |
-| r  |   |
+| r  | Repeat last deletion & insertion.  |
 | s  | Delete character right.  |
 | t  | Delete word right.  |
 | u  | Move cursor up.  |
@@ -45,6 +45,7 @@ Command mode layout
 | x  | Cut.  |
 | y  | Move cursor word right.  |
 | z  | Undo.  |
+| Z  | Redo.  |
 | /  | Find.  |
 | *  | Find current word.  |
 | home  | Toggle insert/command mode.  |
@@ -78,6 +79,10 @@ Added command `d` for starting selection.
 ### 0.3.1
 
 Bug fixes.
+
+### 0.4.0
+
+Added repeat command 'r'. Redo command 'Z'.
 
 ## Acknowledgment
 

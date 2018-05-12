@@ -19,3 +19,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ## [0.3.1]
 
 - Bug fixes.
+
+## [0.4.0]
+
+- Added repeat command `r`, redo command 'Z'.

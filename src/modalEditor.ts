@@ -5,17 +5,26 @@ export class ModalEditor {
     private _editor: vscode.TextEditor;
     private _statusBar: vscode.Disposable;
     private _currentCommand: (any) => void;
+    private _lastCommands: Array<any>;
+    private _lastPos: vscode.Position;
+    private _replaying: boolean;
 
     constructor(editor: vscode.TextEditor) {
         this._editor = editor;
         this._modal = true;
         this._currentCommand = this.handleCommands;
-        this.setCursor();
+        this._lastCommands = [];
+        this._lastPos = editor.selection.active;
+        this._replaying = false;
+        this.setCursor()
     }
 
     handleType(args) {
         if (!this._modal) {
-            vscode.commands.executeCommand('default:type', args);
+            vscode.commands.executeCommand('default:type', args).then(_ => {
+                this._lastPos = this._editor.selection.active;
+            });
+            this.recordCommand(false, args.text);
             return;
         }
         this._currentCommand(args);
@@ -44,10 +53,14 @@ export class ModalEditor {
                 vscode.commands.executeCommand('cursorDown');
                 break;
             case 'f':
-                vscode.commands.executeCommand('deleteWordLeft');
+                vscode.commands.executeCommand('deleteWordLeft').then(_ => {
+                    this._lastPos = this._editor.selection.active
+                });
+                this.recordCommand(true, 't');
                 break;
             case 'g':
                 vscode.commands.executeCommand('deleteAllRight');
+                this.recordCommand(true, args.text);
                 break;
             case 'h':
                 vscode.commands.executeCommand('cursorHome');
@@ -70,11 +83,16 @@ export class ModalEditor {
             case 'o':
                 vscode.commands.executeCommand('cursorEnd');
                 break;
+            case 'r':
+                this.repeatCommands();
+                break;
             case 's':
                 vscode.commands.executeCommand('deleteRight');
+                this.recordCommand(true, args.text);
                 break;
             case 't':
                 vscode.commands.executeCommand('deleteWordRight');
+                this.recordCommand(true, args.text);
                 break;
             case 'u':
                 vscode.commands.executeCommand('cursorUp');
@@ -90,6 +108,9 @@ export class ModalEditor {
                 break;
             case 'z':
                 vscode.commands.executeCommand('undo');
+                break;
+            case 'Z':
+                vscode.commands.executeCommand('redo');
                 break;
             case '/':
                 vscode.commands.executeCommand('actions.find');
@@ -206,6 +227,29 @@ export class ModalEditor {
             this._statusBar.dispose();
         }
         this._statusBar = vscode.window.setStatusBarMessage(msg);
+    }
+
+    recordCommand(isCommand: boolean, text: string) {
+        if (this._replaying) {
+            return;
+        }
+        if (this._editor.selection.active != this._lastPos) {
+            this._lastCommands = [];
+        }
+        this._lastCommands.push({command: isCommand, text: text});
+        this._lastPos = this._editor.selection.active;
+    }
+
+    repeatCommands() {
+        this._replaying = true;
+        this._lastCommands.forEach(arg => {
+            if (arg.command) {
+                this.handleCommands(arg);
+            } else {
+                vscode.commands.executeCommand('default:type', arg);
+            }
+        });
+        this._replaying = false;
     }
 
     handleToggle() {
