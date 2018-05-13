@@ -30,10 +30,28 @@ export class ModalEditor {
         this._currentCommand(args);
     }
 
+    handleBackspace(args) {
+        if (!this._modal) {
+            vscode.commands.executeCommand('deleteLeft', args)
+            return;
+        }
+        this._currentCommand({text: '^H'});
+    }
+
     handleCommands(args: any) {
         switch (args.text) {
+            case '^H':
+                vscode.commands.executeCommand('deleteLeft', args);
+                break;
             case ' ':
                 this.gotoHandleSpaceCommands();
+                break;
+            case '~':
+                this.toggleCase();
+                break;
+            case '^':
+                vscode.commands.executeCommand('cursorUp');
+                vscode.commands.executeCommand('editor.action.joinLines');
                 break;
             case 'a':
                 vscode.commands.executeCommand('editor.action.commentLine');
@@ -71,8 +89,14 @@ export class ModalEditor {
             case 'j':
                 vscode.commands.executeCommand('cursorPageUp');
                 break;
+            case 'J':
+                vscode.commands.executeCommand('cursorTop');
+                break;
             case 'k':
                 vscode.commands.executeCommand('cursorPageDown');
+                break;
+            case 'K':
+                vscode.commands.executeCommand('cursorBottom');
                 break;
             case 'l':
                 vscode.commands.executeCommand('cursorWordStartLeft');
@@ -176,8 +200,22 @@ export class ModalEditor {
 
     handleSpaceCommands(args: any) {
         switch (args.text) {
+            case '^H':
+                vscode.commands.executeCommand('workbench.action.navigateBack');
+                this.gotoHandleCommands();
+                break;
             case 'b':
                 this.gotoHandleSpaceBCommands();
+                break;
+            case 'd':
+                this.duplicateBuffer();
+                break;
+            case '/':
+                vscode.commands.executeCommand('workbench.action.findInFiles');
+                this.gotoHandleCommands();
+                break;
+            case '*':
+                this.searchCurrentWord();
                 break;
             default:
                 this.gotoHandleCommands();
@@ -214,7 +252,7 @@ export class ModalEditor {
 
     gotoHandleSpaceCommands() {
         this._currentCommand = this.handleSpaceCommands;
-        this.showStatusBar("b: buffer")
+        this.showStatusBar("b: buffer     d: duplicate    /: search    *: search current    backspace: navigate back")
     }
 
     gotoHandleSpaceBCommands() {
@@ -250,6 +288,43 @@ export class ModalEditor {
             }
         });
         this._replaying = false;
+    }
+
+    toggleCase() {
+        var testRange = this._editor.selection.with(this._editor.selection.start, this._editor.selection.start.translate(0, 1));
+        if (this._editor.selection.isEmpty) {
+            this._editor.selection = new vscode.Selection(this._editor.selection.start, testRange.end);
+        }
+        var str = this._editor.document.getText(testRange);
+        if (str.toLocaleLowerCase() == str) {
+            vscode.commands.executeCommand('editor.action.transformToUppercase')
+        } else {
+            vscode.commands.executeCommand('editor.action.transformToLowercase')
+        }
+        this._editor.selection = new vscode.Selection(this._editor.selection.end, this._editor.selection.end);
+    }
+
+    duplicateBuffer() {
+        var viewColumn = this.nextViewColumn(this._editor.viewColumn);
+        vscode.window.showTextDocument(this._editor.document, viewColumn);
+        this.gotoHandleCommands();
+    }
+
+    nextViewColumn(column: vscode.ViewColumn) {
+        if (column == undefined) {
+            return vscode.ViewColumn.One;
+        } else {
+            return column % 2 + 1;
+        }
+    }
+
+    searchCurrentWord() {
+        if (this._editor.selection.isEmpty) {
+            var range = this._editor.document.getWordRangeAtPosition(this._editor.selection.active);
+            this._editor.selection = new vscode.Selection(range.start, range.end);
+        }
+        vscode.commands.executeCommand('workbench.action.findInFiles');
+        this.gotoHandleCommands();
     }
 
     handleToggle() {

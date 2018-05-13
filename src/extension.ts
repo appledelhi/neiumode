@@ -28,6 +28,13 @@ export function activate(context: vscode.ExtensionContext) {
             modalEditor.handleType(args);
         }
     });
+    let backspaceCommand = vscode.commands.registerCommand('extension.backspace', args => {
+        let editor = vscode.window.activeTextEditor;
+        if (editor) {
+            let modalEditor = manager.getModalEditorFor(editor);
+            modalEditor.handleBackspace(args);
+        }
+    });
     let toggleCommand = vscode.commands.registerCommand('extension.toggleNeiu', args => {
         let editor = vscode.window.activeTextEditor;
         if (editor) {
@@ -37,6 +44,7 @@ export function activate(context: vscode.ExtensionContext) {
     });
     context.subscriptions.push(changeCallback);
     context.subscriptions.push(typeCommand);
+    context.subscriptions.push(backspaceCommand);
     context.subscriptions.push(toggleCommand);
     context.subscriptions.push(manager);
 }

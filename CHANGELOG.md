@@ -22,4 +22,13 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [0.4.0]
 
-- Added repeat command `r`, redo command 'Z'.
+- Added repeat command `r`, redo command `Z`.
+
+## [0.5.0]
+
+- Added `J` for cursorTop, `K` for cursorBottom.
+- `space backspace` for navigate back, `space /` for find in files, `space *` for find current
+word in files.
+- `space d` for duplicate buffer.
+- `~` for toggle case.
+- `^` for join lines.

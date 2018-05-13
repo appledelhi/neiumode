@@ -7,6 +7,7 @@ one for executing commands and one for entering texts(like `vi`). You toggle bet
 
 * Ergonomic key layout (for Colemak keyboard).
 * Vi like repeat command. For example: place the cursor to a word, delete it with `t` and insert `abc`. Then move cursor to another word and press `r` to repeat.
+* Spacemacs like menu system. For example: `space /` to find in files.
 * Developed on split keyboard(eg. [Kinesys Advantage](https://www.kinesis-ergo.com/shop/advantage2/)) but can be used for normal keyboard.
 * Spacemacs like key bindings.
 
@@ -48,11 +49,17 @@ Command mode layout
 | Z  | Redo.  |
 | /  | Find.  |
 | *  | Find current word.  |
+| ~  | Toggle lower/upper case.  |
+| ^  | Join lines.  |
 | home  | Toggle insert/command mode.  |
+| space backspace  | Navigate back.  |
+| space /  | Find in files.  |
+| space *  | Find current word in files.  |
 | space b n  | Previous editor.  |
 | space b i  | Next editor.  |
 | space b u  | Navigate back.  |
 | space b e  | Navigate forward.  |
+| space d  | Duplicate buffer.  |
 
 ## Extension Settings
 
@@ -82,7 +89,14 @@ Bug fixes.
 
 ### 0.4.0
 
-Added repeat command 'r'. Redo command 'Z'.
+Added repeat command `r`. Redo command `Z`.
+
+### 0.5.0
+
+Added `J` for cursorTop, `K` for cursorBottom.
+`space backspace` for navigate back, `space /` for find in files, `space *` for find current
+word in files.
+`space d` for duplicate buffer. `~` for toggle case. `^` for join lines.
 
 ## Acknowledgment
 
