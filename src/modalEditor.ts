@@ -1,20 +1,25 @@
 import * as vscode from "vscode";
+import "./boundaries";
+import { nextBoundaryRight } from "./boundaries";
 
 export class ModalEditor {
   private _modal: boolean;
   private _editor: vscode.TextEditor;
   private _statusBar: vscode.Disposable;
   private _currentCommand: (any) => void;
-  private _copyBuffer: string;
+  static _copyBuffer: string = "";
   private _formatAfterPaste: boolean;
+  private _eol: string;
+  private _lastCommand: string;
 
   constructor(editor: vscode.TextEditor) {
     this._editor = editor;
     this._modal = true;
     this._currentCommand = this.handleCommands;
-    this._copyBuffer = "";
     let config = vscode.workspace.getConfiguration("editor", editor.document.uri);
     this._formatAfterPaste = config.get("formatOnPaste", false);
+    config = vscode.workspace.getConfiguration("files", editor.document.uri);
+    this._eol = config.get("eol", "\n");
     this.setCursor();
   }
 
@@ -40,7 +45,7 @@ export class ModalEditor {
         this.gotoHandleSelectCommands();
         break;
       case "c":
-        this.handleCopyCommand();
+        this.copyCommand();
         break;
       case "d":
         this.gotoHandleSelectCommands();
@@ -79,16 +84,16 @@ export class ModalEditor {
         vscode.commands.executeCommand("deleteRight");
         break;
       case "t":
-        vscode.commands.executeCommand("deleteWordRight");
+        this.deleteCommand();
         break;
       case "u":
         vscode.commands.executeCommand("cursorUp");
         break;
       case "v":
-        this.handlePasteCommand();
+        this.pasteCommand();
         break;
       case "x":
-        vscode.commands.executeCommand("editor.action.clipboardCutAction");
+        this.cutCommand();
         break;
       case "y":
         vscode.commands.executeCommand("cursorWordEndRight");
@@ -105,6 +110,7 @@ export class ModalEditor {
       default:
         vscode.commands.executeCommand("default:type", args);
     }
+    this._lastCommand = args.text;
   }
 
   handleSelectCommands(args: any) {
@@ -186,14 +192,11 @@ export class ModalEditor {
     this.gotoHandleCommands();
   }
 
-  handleCopyCommand() {
+  copyCommand() {
     if (this._editor.selection.isEmpty) {
-      this.newCopyBuf(true);
+      let merge = this._lastCommand == "c" ? true : false;
+      this.newCopyBuf(merge);
       vscode.commands.executeCommand("cursorDown");
-
-      // vscode.commands.executeCommand("expandLineSelection");
-      // vscode.commands.executeCommand("editor.action.clipboardCopyAction");
-      // vscode.commands.executeCommand("cancelSelection");
     } else {
       this.newCopyBuf();
       vscode.commands.executeCommand("editor.action.clipboardCopyAction");
@@ -201,8 +204,28 @@ export class ModalEditor {
     }
   }
 
-  handlePasteCommand() {
-    this.doPaste(this._copyBuffer);
+  cutCommand() {
+    let merge = false;
+    if (this._editor.selection.isEmpty && this._lastCommand == "x") {
+      merge = true;
+    }
+    this.newCopyBuf(merge);
+    vscode.commands.executeCommand("editor.action.clipboardCutAction");
+  }
+
+  pasteCommand() {
+    this.doPaste(ModalEditor._copyBuffer);
+  }
+
+  deleteCommand() {
+    let document = this._editor.document;
+    let position = this._editor.selection.active;
+    let nextPos = nextBoundaryRight(document, position);
+    let range = new vscode.Range(this._editor.selection.active, nextPos);
+
+    this._editor.edit(builder => {
+      builder.delete(range);
+    });
   }
 
   gotoHandleCommands() {
@@ -258,20 +281,19 @@ export class ModalEditor {
   // from
   // https://github.com/stef-levesque/vscode-multiclip/blob/master/src/extension.ts
   newCopyBuf(merge: boolean = false): string {
-    let d: vscode.TextDocument = this._editor.document;
+    let d = this._editor.document;
     let sel = this._editor.selection;
     let txt: string = d.getText(new vscode.Range(sel.start, sel.end));
 
     // A copy of a zero length line means copy the whole line.
     if (txt.length === 0) {
-      let eol = d.eol == vscode.EndOfLine.CRLF ? "\r\n" : "\n";
-      txt = d.lineAt(sel.start.line).text + eol;
+      txt = d.lineAt(sel.start.line).text + this._eol;
     }
 
     if (merge) {
-      this._copyBuffer += txt;
+      ModalEditor._copyBuffer += txt;
     } else {
-      this._copyBuffer = txt;
+      ModalEditor._copyBuffer = txt;
     }
     return txt;
   }
