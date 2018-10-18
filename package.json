@@ -1,66 +1,66 @@
 {
-    "name": "neiumode",
-    "displayName": "NeiuMode",
-    "description": "Modal editing mode for Colemak keyboard",
-    "version": "0.5.0",
-    "publisher": "jakesong",
-    "license": "MIT",
-    "keywords": [
-        "colemak",
-        "modal"
+  "name": "neiumode",
+  "displayName": "NeiuMode",
+  "description": "Modal editing mode for Colemak keyboard",
+  "version": "0.6.0",
+  "publisher": "jakesong",
+  "license": "MIT",
+  "keywords": [
+    "colemak",
+    "modal"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/appledelhi/neiumode.git"
+  },
+  "engines": {
+    "vscode": "^1.22.0"
+  },
+  "categories": [
+    "Other",
+    "Keymaps"
+  ],
+  "activationEvents": [
+    "*"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "extension.toggleNeiu",
+        "title": "Toggle Neiu mode",
+        "category": "Neiu mode"
+      },
+      {
+        "command": "extension.backspace",
+        "title": "Backspace",
+        "category": "Neiu mode"
+      }
     ],
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/appledelhi/neiumode.git"
-    },
-    "engines": {
-        "vscode": "^1.22.0"
-    },
-    "categories": [
-        "Other",
-        "Keymaps"
-    ],
-    "activationEvents": [
-        "*"
-    ],
-    "contributes": {
-        "commands": [
-            {
-                "command": "extension.toggleNeiu",
-                "title": "Toggle Neiu mode",
-                "category": "Neiu mode"
-            },
-            {
-                "command": "extension.backspace",
-                "title": "Backspace",
-                "category": "Neiu mode"
-            }
-        ],
-        "keybindings": [
-            {
-                "command": "extension.toggleNeiu",
-                "key": "home",
-                "when": "editorTextFocus"
-            },
-            {
-                "command": "extension.backspace",
-                "key": "Backspace",
-                "when": "editorTextFocus"
-            }
-        ]
-    },
-    "main": "./out/extension",
-    "scripts": {
-        "vscode:prepublish": "npm run compile",
-        "compile": "tsc -p ./",
-        "watch": "tsc -watch -p ./",
-        "postinstall": "node ./node_modules/vscode/bin/install",
-        "test": "npm run compile && node ./node_modules/vscode/bin/test"
-    },
-    "devDependencies": {
-        "typescript": "^2.8.3",
-        "vscode": "^1.1.16",
-        "@types/node": "^9.6.7",
-        "@types/mocha": "^5.2.0"
-    }
+    "keybindings": [
+      {
+        "command": "extension.toggleNeiu",
+        "key": "home",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "extension.backspace",
+        "key": "Backspace",
+        "when": "editorTextFocus"
+      }
+    ]
+  },
+  "main": "./out/extension",
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "postinstall": "node ./node_modules/vscode/bin/install",
+    "test": "npm run compile && node ./node_modules/vscode/bin/test"
+  },
+  "devDependencies": {
+    "typescript": "^2.8.3",
+    "vscode": "^1.1.16",
+    "@types/node": "^9.6.7",
+    "@types/mocha": "^5.2.0"
+  }
 }
