@@ -46,6 +46,9 @@ export class ModalEditor {
             case ' ':
                 this.gotoHandleSpaceCommands();
                 break;
+            case ',':
+                this.gotoHandleCommaCommands();
+                break;
             case '~':
                 this.toggleCase();
                 break;
@@ -240,6 +243,13 @@ export class ModalEditor {
         this.gotoHandleCommands();
     }
 
+    handleCommaCommands(args: any) {
+        switch (args.text) {
+            case 'd':
+                vscode.commands.executeCommand('')
+        }
+    }
+
     gotoHandleCommands() {
         this._currentCommand = this.handleCommands;
         this.showStatusBar("");
@@ -258,6 +268,11 @@ export class ModalEditor {
     gotoHandleSpaceBCommands() {
         this._currentCommand = this.handleSpaceBCommands;
         this.showStatusBar("n: previous buffer   i: next buffer   u: navigate back  e: navigate forward")
+    }
+
+    gotoHandleCommaCommands() {
+        this._currentCommand = this.handleCommaCommands;
+        this.showStatusBar("d: goto definition");
     }
 
     showStatusBar(msg: string) {
