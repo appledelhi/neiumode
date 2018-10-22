@@ -1,36 +1,55 @@
-import * as vscode from "vscode";
-import { nextBoundaryRight } from "./boundaries";
+import {
+  Selection,
+  TextDocument,
+  TextEditor,
+  TextEditorEdit,
+  TextEditorRevealType,
+  TextEditorCursorStyle,
+  Position,
+  Range,
+  Disposable,
+  ViewColumn,
+  workspace,
+  commands,
+  window
+} from "vscode";
+// from https://github.com/ow--/vscode-subword-navigation/tree/master/src
+import { nextBoundaryLeft, nextBoundaryRight } from "./boundaries";
+
+type BoundaryFunc = (doc: TextDocument, pos: Position) => Position;
+type SelectionFunc = (selection: Selection, boundary: Position) => Selection;
+// end of copied code
 
 export class ModalEditor {
   private _modal: boolean;
-  private _editor: vscode.TextEditor;
-  private _statusBar: vscode.Disposable;
+  private _editor: TextEditor;
+  private _statusBar: Disposable;
   private _currentCommand: (any) => void;
   private _lastCommands: Array<any>;
-  private _lastPos: vscode.Position;
+  private _lastPos: Position;
   private _replaying: boolean;
   private _formatAfterPaste: boolean;
   private _eol: string;
   private _lastCommand: string;
   static _copyBuffer: string = "";
 
-  constructor(editor: vscode.TextEditor) {
+  constructor(editor: TextEditor) {
     this._editor = editor;
     this._modal = true;
     this._currentCommand = this.handleCommands;
     this._lastCommands = [];
     this._lastPos = editor.selection.active;
     this._replaying = false;
-    let config = vscode.workspace.getConfiguration("editor", editor.document.uri);
+    let config = workspace.getConfiguration("editor", editor.document.uri);
     this._formatAfterPaste = config.get("formatOnPaste", false);
-    config = vscode.workspace.getConfiguration("files", editor.document.uri);
+    config = workspace.getConfiguration("files", editor.document.uri);
     this._eol = config.get("eol", "\n");
     this.setCursor();
   }
 
   handleType(args) {
     if (!this._modal) {
-      vscode.commands.executeCommand("default:type", args).then(_ => {
+      commands.executeCommand("default:type", args).then(_ => {
         this._lastPos = this._editor.selection.active;
       });
       this.recordCommand(false, args.text);
@@ -41,7 +60,7 @@ export class ModalEditor {
 
   handleBackspace(args) {
     if (!this._modal) {
-      vscode.commands.executeCommand("deleteLeft", args);
+      commands.executeCommand("deleteLeft", args);
       return;
     }
     this._currentCommand({ text: "^H" });
@@ -50,7 +69,7 @@ export class ModalEditor {
   handleCommands(args: any) {
     switch (args.text) {
       case "^H":
-        vscode.commands.executeCommand("deleteLeft", args);
+        commands.executeCommand("deleteLeft", args);
         break;
       case " ":
         this.gotoHandleSpaceCommands();
@@ -62,15 +81,15 @@ export class ModalEditor {
         this.toggleCase();
         break;
       case "^":
-        vscode.commands.executeCommand("cursorUp");
-        vscode.commands.executeCommand("editor.action.joinLines");
+        commands.executeCommand("cursorUp");
+        commands.executeCommand("editor.action.joinLines");
         break;
       case "a":
-        vscode.commands.executeCommand("editor.action.commentLine");
-        vscode.commands.executeCommand("cursorDown");
+        commands.executeCommand("editor.action.commentLine");
+        commands.executeCommand("cursorDown");
         break;
       case "b":
-        vscode.commands.executeCommand("expandLineSelection");
+        commands.executeCommand("expandLineSelection");
         this.gotoHandleSelectCommands();
         break;
       case "c":
@@ -80,50 +99,50 @@ export class ModalEditor {
         this.gotoHandleSelectCommands();
         break;
       case "e":
-        vscode.commands.executeCommand("cursorDown");
+        commands.executeCommand("cursorDown");
         break;
       case "f":
-        vscode.commands.executeCommand("deleteWordLeft").then(_ => {
+        commands.executeCommand("deleteWordLeft").then(_ => {
           this._lastPos = this._editor.selection.active;
         });
         this.recordCommand(true, "t");
         break;
       case "g":
-        vscode.commands.executeCommand("deleteAllRight");
+        commands.executeCommand("deleteAllRight");
         this.recordCommand(true, args.text);
         break;
       case "h":
-        vscode.commands.executeCommand("cursorHome");
+        commands.executeCommand("cursorHome");
         break;
       case "i":
-        vscode.commands.executeCommand("cursorRight");
+        commands.executeCommand("cursorRight");
         break;
       case "j":
-        vscode.commands.executeCommand("cursorPageUp");
+        commands.executeCommand("cursorPageUp");
         break;
       case "J":
-        vscode.commands.executeCommand("cursorTop");
+        commands.executeCommand("cursorTop");
         break;
       case "k":
-        vscode.commands.executeCommand("cursorPageDown");
+        commands.executeCommand("cursorPageDown");
         break;
       case "K":
-        vscode.commands.executeCommand("cursorBottom");
+        commands.executeCommand("cursorBottom");
         break;
       case "l":
-        vscode.commands.executeCommand("cursorWordStartLeft");
+        this.cursorSubword(this._editor, nextBoundaryLeft, this.move);
         break;
       case "n":
-        vscode.commands.executeCommand("cursorLeft");
+        commands.executeCommand("cursorLeft");
         break;
       case "o":
-        vscode.commands.executeCommand("cursorEnd");
+        commands.executeCommand("cursorEnd");
         break;
       case "r":
         this.repeatCommands();
         break;
       case "s":
-        vscode.commands.executeCommand("deleteRight");
+        commands.executeCommand("deleteRight");
         this.recordCommand(true, args.text);
         break;
       case "t":
@@ -131,7 +150,7 @@ export class ModalEditor {
         this.recordCommand(true, args.text);
         break;
       case "u":
-        vscode.commands.executeCommand("cursorUp");
+        commands.executeCommand("cursorUp");
         break;
       case "v":
         this.pasteCommand();
@@ -140,22 +159,22 @@ export class ModalEditor {
         this.cutCommand();
         break;
       case "y":
-        vscode.commands.executeCommand("cursorWordEndRight");
+        this.cursorSubword(this._editor, nextBoundaryRight, this.move);
         break;
       case "z":
-        vscode.commands.executeCommand("undo");
+        commands.executeCommand("undo");
         break;
       case "Z":
-        vscode.commands.executeCommand("redo");
+        commands.executeCommand("redo");
         break;
       case "/":
-        vscode.commands.executeCommand("actions.find");
+        commands.executeCommand("actions.find");
         break;
       case "*":
-        vscode.commands.executeCommand("actions.findWithSelection");
+        commands.executeCommand("actions.findWithSelection");
         break;
       default:
-        vscode.commands.executeCommand("default:type", args);
+        commands.executeCommand("default:type", args);
     }
     this._lastCommand = args.text;
   }
@@ -166,44 +185,44 @@ export class ModalEditor {
         if (this._editor.selection.isEmpty) {
           this.gotoHandleCommands();
         } else {
-          vscode.commands.executeCommand("cancelSelection");
+          commands.executeCommand("cancelSelection");
         }
         break;
       case "e":
-        vscode.commands.executeCommand("cursorDownSelect");
+        commands.executeCommand("cursorDownSelect");
         break;
       case "h":
-        vscode.commands.executeCommand("cursorHomeSelect");
+        commands.executeCommand("cursorHomeSelect");
         break;
       case "i":
-        vscode.commands.executeCommand("cursorRightSelect");
+        commands.executeCommand("cursorRightSelect");
         break;
       case "j":
-        vscode.commands.executeCommand("cursorPageUpSelect");
+        commands.executeCommand("cursorPageUpSelect");
         break;
       case "J":
-        vscode.commands.executeCommand("cursorTopSelect");
+        commands.executeCommand("cursorTopSelect");
         break;
       case "k":
-        vscode.commands.executeCommand("cursorPageDownSelect");
+        commands.executeCommand("cursorPageDownSelect");
         break;
       case "K":
-        vscode.commands.executeCommand("cursorBottomSelect");
+        commands.executeCommand("cursorBottomSelect");
         break;
       case "l":
-        vscode.commands.executeCommand("cursorWordStartLeftSelect");
+        this.cursorSubword(this._editor, nextBoundaryLeft, this.select);
         break;
       case "n":
-        vscode.commands.executeCommand("cursorLeftSelect");
+        commands.executeCommand("cursorLeftSelect");
         break;
       case "o":
-        vscode.commands.executeCommand("cursorEndSelect");
+        commands.executeCommand("cursorEndSelect");
         break;
       case "u":
-        vscode.commands.executeCommand("cursorUpSelect");
+        commands.executeCommand("cursorUpSelect");
         break;
       case "y":
-        vscode.commands.executeCommand("cursorWordEndRightSelect");
+        this.cursorSubword(this._editor, nextBoundaryRight, this.select);
         break;
       default:
         this.gotoHandleCommands();
@@ -214,7 +233,7 @@ export class ModalEditor {
   handleSpaceCommands(args: any) {
     switch (args.text) {
       case "^H":
-        vscode.commands.executeCommand("workbench.action.navigateBack");
+        commands.executeCommand("workbench.action.navigateBack");
         this.gotoHandleCommands();
         break;
       case "b":
@@ -224,7 +243,7 @@ export class ModalEditor {
         this.duplicateBuffer();
         break;
       case "/":
-        vscode.commands.executeCommand("workbench.action.findInFiles");
+        commands.executeCommand("workbench.action.findInFiles");
         this.gotoHandleCommands();
         break;
       case "*":
@@ -238,16 +257,16 @@ export class ModalEditor {
   handleSpaceBCommands(args: any) {
     switch (args.text) {
       case "n":
-        vscode.commands.executeCommand("workbench.action.previousEditor");
+        commands.executeCommand("workbench.action.previousEditor");
         break;
       case "i":
-        vscode.commands.executeCommand("workbench.action.nextEditor");
+        commands.executeCommand("workbench.action.nextEditor");
         break;
       case "u":
-        vscode.commands.executeCommand("workbench.action.navigateBack");
+        commands.executeCommand("workbench.action.navigateBack");
         break;
       case "e":
-        vscode.commands.executeCommand("workbench.action.navigateForward");
+        commands.executeCommand("workbench.action.navigateForward");
         break;
     }
     this.gotoHandleCommands();
@@ -256,7 +275,7 @@ export class ModalEditor {
   handleCommaCommands(args: any) {
     switch (args.text) {
       case "d":
-        vscode.commands.executeCommand("");
+        commands.executeCommand("");
     }
   }
 
@@ -293,18 +312,18 @@ export class ModalEditor {
     if (this._statusBar) {
       this._statusBar.dispose();
     }
-    this._statusBar = vscode.window.setStatusBarMessage(msg);
+    this._statusBar = window.setStatusBarMessage(msg);
   }
 
   copyCommand() {
     if (this._editor.selection.isEmpty) {
       let merge = this._lastCommand == "c" ? true : false;
       this.newCopyBuf(merge);
-      vscode.commands.executeCommand("cursorDown");
+      commands.executeCommand("cursorDown");
     } else {
       this.newCopyBuf();
-      vscode.commands.executeCommand("editor.action.clipboardCopyAction");
-      vscode.commands.executeCommand("cancelSelection");
+      commands.executeCommand("editor.action.clipboardCopyAction");
+      commands.executeCommand("cancelSelection");
     }
   }
 
@@ -314,7 +333,7 @@ export class ModalEditor {
       merge = true;
     }
     this.newCopyBuf(merge);
-    vscode.commands.executeCommand("editor.action.clipboardCutAction");
+    commands.executeCommand("editor.action.clipboardCutAction");
   }
 
   pasteCommand() {
@@ -325,7 +344,7 @@ export class ModalEditor {
     let document = this._editor.document;
     let position = this._editor.selection.active;
     let nextPos = nextBoundaryRight(document, position);
-    let range = new vscode.Range(this._editor.selection.active, nextPos);
+    let range = new Range(this._editor.selection.active, nextPos);
 
     this._editor.edit(builder => {
       builder.delete(range);
@@ -349,7 +368,7 @@ export class ModalEditor {
       if (arg.command) {
         this.handleCommands(arg);
       } else {
-        vscode.commands.executeCommand("default:type", arg);
+        commands.executeCommand("default:type", arg);
       }
     });
     this._replaying = false;
@@ -361,29 +380,26 @@ export class ModalEditor {
       this._editor.selection.start.translate(0, 1)
     );
     if (this._editor.selection.isEmpty) {
-      this._editor.selection = new vscode.Selection(this._editor.selection.start, testRange.end);
+      this._editor.selection = new Selection(this._editor.selection.start, testRange.end);
     }
     var str = this._editor.document.getText(testRange);
     if (str.toLocaleLowerCase() == str) {
-      vscode.commands.executeCommand("editor.action.transformToUppercase");
+      commands.executeCommand("editor.action.transformToUppercase");
     } else {
-      vscode.commands.executeCommand("editor.action.transformToLowercase");
+      commands.executeCommand("editor.action.transformToLowercase");
     }
-    this._editor.selection = new vscode.Selection(
-      this._editor.selection.end,
-      this._editor.selection.end
-    );
+    this._editor.selection = new Selection(this._editor.selection.end, this._editor.selection.end);
   }
 
   duplicateBuffer() {
     var viewColumn = this.nextViewColumn(this._editor.viewColumn);
-    vscode.window.showTextDocument(this._editor.document, viewColumn);
+    window.showTextDocument(this._editor.document, viewColumn);
     this.gotoHandleCommands();
   }
 
-  nextViewColumn(column: vscode.ViewColumn) {
+  nextViewColumn(column: ViewColumn) {
     if (column == undefined) {
-      return vscode.ViewColumn.One;
+      return ViewColumn.One;
     } else {
       return (column % 2) + 1;
     }
@@ -392,9 +408,9 @@ export class ModalEditor {
   searchCurrentWord() {
     if (this._editor.selection.isEmpty) {
       var range = this._editor.document.getWordRangeAtPosition(this._editor.selection.active);
-      this._editor.selection = new vscode.Selection(range.start, range.end);
+      this._editor.selection = new Selection(range.start, range.end);
     }
-    vscode.commands.executeCommand("workbench.action.findInFiles");
+    commands.executeCommand("workbench.action.findInFiles");
     this.gotoHandleCommands();
   }
 
@@ -408,15 +424,15 @@ export class ModalEditor {
     this.setCursor();
   }
 
-  setEditor(editor: vscode.TextEditor) {
+  setEditor(editor: TextEditor) {
     this._editor = editor;
   }
 
   setCursor() {
     if (this._modal) {
-      this._editor.options.cursorStyle = vscode.TextEditorCursorStyle.Block;
+      this._editor.options.cursorStyle = TextEditorCursorStyle.Block;
     } else {
-      this._editor.options.cursorStyle = vscode.TextEditorCursorStyle.Line;
+      this._editor.options.cursorStyle = TextEditorCursorStyle.Line;
     }
   }
   // from
@@ -424,7 +440,7 @@ export class ModalEditor {
   newCopyBuf(merge: boolean = false): string {
     let d = this._editor.document;
     let sel = this._editor.selection;
-    let txt: string = d.getText(new vscode.Range(sel.start, sel.end));
+    let txt: string = d.getText(new Range(sel.start, sel.end));
 
     // A copy of a zero length line means copy the whole line.
     if (txt.length === 0) {
@@ -446,12 +462,12 @@ export class ModalEditor {
       return;
     }
 
-    e.edit(function(edit: vscode.TextEditorEdit) {
+    e.edit(function(edit: TextEditorEdit) {
       e.selections.forEach(sel => {
         edit.replace(sel, txt);
       });
     }).then(() => {
-      vscode.commands.executeCommand("cancelSelection");
+      commands.executeCommand("cancelSelection");
     });
     // .then(() => {
     //   setTimeout(() => {
@@ -466,14 +482,14 @@ export class ModalEditor {
     //     e.selections = [sel];
 
     //     // Send the pasted value to the system clipboard.
-    //     vscode.commands.executeCommand("editor.action.clipboardCopyAction").then(() => {
+    //     commands.executeCommand("editor.action.clipboardCopyAction").then(() => {
     //       setTimeout(() => {
     //         // Restore the previous selection(s)
     //         e.selections = tmpSelections;
 
     //         // Format the selection, if enabled
     //         if (this._formatAfterPaste) {
-    //           vscode.commands.executeCommand("editor.action.formatSelection").then(() => {
+    //           commands.executeCommand("editor.action.formatSelection").then(() => {
     //             setTimeout(function() {
     //               lastRange = new Range(e.selection.start, e.selection.end);
     //             }, 100);
@@ -485,6 +501,26 @@ export class ModalEditor {
     //     });
     //   }, 100);
     // });
+  }
+
+  // from: https://github.com/ow--/vscode-subword-navigation/blob/master/src/commands.ts
+  cursorSubword(editor: TextEditor, next: BoundaryFunc, sel: SelectionFunc) {
+    editor.selections = editor.selections.map(s => sel(s, next(editor.document, s.active)));
+    this.reveal(editor);
+  }
+
+  reveal(editor: TextEditor) {
+    if (editor.selections.length === 1) {
+      editor.revealRange(editor.selection, TextEditorRevealType.InCenterIfOutsideViewport);
+    }
+  }
+
+  move(selection: Selection, boundary: Position) {
+    return new Selection(boundary, boundary);
+  }
+
+  select(selection: Selection, boundary: Position) {
+    return new Selection(selection.anchor, boundary);
   }
 
   dispose() {
