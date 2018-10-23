@@ -6,7 +6,7 @@ one for executing commands and one for entering texts(like `vi`). You toggle bet
 ## Features
 
 - Ergonomic key layout (for Colemak keyboard).
-- Vi like repeat command. For example: place the cursor to a word, delete it with `t` and insert `abc`. Then move cursor to another word and press `r` to repeat.
+- Vi like repeat command. For example: place the cursor to a word(eg. `abc`), delete it with `t` and insert `xyz`. Press `.` will find next occurrenc of `abc`. Pressing `r` will repeat the replacement.
 - Spacemacs like menu system. For example: `space /` to find in files.
 - Developed on split keyboard(eg. [Kinesys Advantage](https://www.kinesis-ergo.com/shop/advantage2/)) but can be used for normal keyboard.
 - Spacemacs like key bindings.
@@ -97,10 +97,15 @@ Added `J` for cursorTop, `K` for cursorBottom.
 word in files.
 `space d` for duplicate buffer. `~` for toggle case. `^` for join lines.
 
-## [0.6.0]
+### 0.6.0
 
 - Press `c`/`x` several times to copy/cut continuous lines.
 - `t` command deletes text by context.
+
+### 0.7.0
+
+- `l`/`y` commands move cursor by subword.
+- `.` command finds characters deleted last by `f`/`s` command.
 
 ## Acknowledgment
 

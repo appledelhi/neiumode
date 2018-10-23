@@ -40,3 +40,8 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 - Press `c`/`x` several times to copy/cut continuous lines.
 - `t` command deletes text by context.
+
+## [0.7.0]
+
+- `l`/`y` commands move cursor by subword.
+- `.` command finds characters deleted last by `f`/`s` command.
