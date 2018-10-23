@@ -31,6 +31,7 @@ export class ModalEditor {
   private _formatAfterPaste: boolean;
   private _eol: string;
   private _lastCommand: string;
+  private _searchWord: string;
   static _copyBuffer: string = "";
 
   constructor(editor: TextEditor) {
@@ -40,6 +41,7 @@ export class ModalEditor {
     this._lastCommands = [];
     this._lastPos = editor.selection.active;
     this._replaying = false;
+    this._searchWord = "";
     let config = workspace.getConfiguration("editor", editor.document.uri);
     this._formatAfterPaste = config.get("formatOnPaste", false);
     config = workspace.getConfiguration("files", editor.document.uri);
@@ -142,12 +144,12 @@ export class ModalEditor {
         this.repeatCommands();
         break;
       case "s":
-        commands.executeCommand("deleteRight");
         this.recordCommand(true, args.text);
+        this.deleteCharCommand();
         break;
       case "t":
-        this.deleteCommand();
         this.recordCommand(true, args.text);
+        this.deleteCommand();
         break;
       case "u":
         commands.executeCommand("cursorUp");
@@ -172,6 +174,9 @@ export class ModalEditor {
         break;
       case "*":
         commands.executeCommand("actions.findWithSelection");
+        break;
+      case ".":
+        this.findNext();
         break;
       default:
         commands.executeCommand("default:type", args);
@@ -345,10 +350,20 @@ export class ModalEditor {
     let position = this._editor.selection.active;
     let nextPos = nextBoundaryRight(document, position);
     let range = new Range(this._editor.selection.active, nextPos);
+    this._searchWord += document.getText(range);
 
     this._editor.edit(builder => {
       builder.delete(range);
     });
+  }
+
+  deleteCharCommand() {
+    let document = this._editor.document;
+    let position = this._editor.selection.active;
+    let nextPos = position.translate(0, 1);
+    let range = new Range(this._editor.selection.active, nextPos);
+    this._searchWord += document.getText(range);
+    commands.executeCommand("deleteRight");
   }
 
   recordCommand(isCommand: boolean, text: string) {
@@ -357,6 +372,7 @@ export class ModalEditor {
     }
     if (this._editor.selection.active != this._lastPos) {
       this._lastCommands = [];
+      this._searchWord = "";
     }
     this._lastCommands.push({ command: isCommand, text: text });
     this._lastPos = this._editor.selection.active;
@@ -372,6 +388,25 @@ export class ModalEditor {
       }
     });
     this._replaying = false;
+  }
+
+  findNext() {
+    if (this._searchWord == "") {
+      return;
+    }
+    let text = this._editor.document.getText();
+    let index = this._editor.document.offsetAt(this._editor.selection.active);
+    let nextIndex = text.indexOf(this._searchWord, index + 1);
+    if (nextIndex < 0) {
+      nextIndex = text.indexOf(this._searchWord, 0);
+      if (nextIndex < 0) {
+        this.showStatusBar("No results");
+        return;
+      }
+    }
+    let nextPos = this._editor.document.positionAt(nextIndex);
+    this._editor.selection = new Selection(nextPos, nextPos);
+    this.reveal(this._editor);
   }
 
   toggleCase() {
@@ -522,6 +557,7 @@ export class ModalEditor {
   select(selection: Selection, boundary: Position) {
     return new Selection(selection.anchor, boundary);
   }
+  // end of copied code
 
   dispose() {
     this._statusBar.dispose();
