@@ -13,6 +13,7 @@ import {
   commands,
   window
 } from "vscode";
+import * as clipboard from "clipboardy";
 // from https://github.com/ow--/vscode-subword-navigation/tree/master/src
 import { nextBoundaryLeft, nextBoundaryRight } from "./boundaries";
 
@@ -145,11 +146,11 @@ export class ModalEditor {
         break;
       case "s":
         this.recordCommand(true, args.text);
-        this.deleteCharCommand();
+        this.deleteCommand(false);
         break;
       case "t":
         this.recordCommand(true, args.text);
-        this.deleteCommand();
+        this.deleteCommand(true);
         break;
       case "u":
         commands.executeCommand("cursorUp");
@@ -280,8 +281,9 @@ export class ModalEditor {
   handleCommaCommands(args: any) {
     switch (args.text) {
       case "d":
-        commands.executeCommand("");
+        commands.executeCommand("editor.action.goToImplementation");
     }
+    this.gotoHandleCommands();
   }
 
   gotoHandleCommands() {
@@ -324,10 +326,11 @@ export class ModalEditor {
     if (this._editor.selection.isEmpty) {
       let merge = this._lastCommand == "c" ? true : false;
       this.newCopyBuf(merge);
+      clipboard.writeSync(ModalEditor._copyBuffer);
       commands.executeCommand("cursorDown");
     } else {
       this.newCopyBuf();
-      commands.executeCommand("editor.action.clipboardCopyAction");
+      clipboard.writeSync(ModalEditor._copyBuffer);
       commands.executeCommand("cancelSelection");
     }
   }
@@ -338,32 +341,26 @@ export class ModalEditor {
       merge = true;
     }
     this.newCopyBuf(merge);
-    commands.executeCommand("editor.action.clipboardCutAction");
+    commands.executeCommand("editor.action.clipboardCutAction").then(() => {
+      clipboard.writeSync(ModalEditor._copyBuffer);
+    });
   }
 
   pasteCommand() {
-    this.doPaste(ModalEditor._copyBuffer);
+    commands.executeCommand("editor.action.clipboardPasteAction");
+    commands.executeCommand("cancelSelection");
   }
 
-  deleteCommand() {
+  deleteCommand(word: boolean) {
     let document = this._editor.document;
     let position = this._editor.selection.active;
-    let nextPos = nextBoundaryRight(document, position);
+    let nextPos = word ? nextBoundaryRight(document, position) : position.translate(0, 1);
     let range = new Range(this._editor.selection.active, nextPos);
     this._searchWord += document.getText(range);
 
     this._editor.edit(builder => {
       builder.delete(range);
     });
-  }
-
-  deleteCharCommand() {
-    let document = this._editor.document;
-    let position = this._editor.selection.active;
-    let nextPos = position.translate(0, 1);
-    let range = new Range(this._editor.selection.active, nextPos);
-    this._searchWord += document.getText(range);
-    commands.executeCommand("deleteRight");
   }
 
   recordCommand(isCommand: boolean, text: string) {
@@ -380,6 +377,7 @@ export class ModalEditor {
 
   repeatCommands() {
     this._replaying = true;
+    this.showStatusBar("length " + this._lastCommands.length);
     this._lastCommands.forEach(arg => {
       if (arg.command) {
         this.handleCommands(arg);
@@ -388,6 +386,8 @@ export class ModalEditor {
       }
     });
     this._replaying = false;
+    // position to reset command buffer
+    this._lastPos = new Position(0, 0);
   }
 
   findNext() {
@@ -472,7 +472,7 @@ export class ModalEditor {
   }
   // from
   // https://github.com/stef-levesque/vscode-multiclip/blob/master/src/extension.ts
-  newCopyBuf(merge: boolean = false): string {
+  newCopyBuf(merge: boolean = false) {
     let d = this._editor.document;
     let sel = this._editor.selection;
     let txt: string = d.getText(new Range(sel.start, sel.end));
@@ -487,55 +487,6 @@ export class ModalEditor {
     } else {
       ModalEditor._copyBuffer = txt;
     }
-    return txt;
-  }
-
-  doPaste(txt: string) {
-    const e = this._editor;
-    const d = e ? e.document : null;
-    if (!e || !d) {
-      return;
-    }
-
-    e.edit(function(edit: TextEditorEdit) {
-      e.selections.forEach(sel => {
-        edit.replace(sel, txt);
-      });
-    }).then(() => {
-      commands.executeCommand("cancelSelection");
-    });
-    // .then(() => {
-    //   setTimeout(() => {
-    //     // Grab a copy of the current selection array
-    //     const tmpSelections = e.selections;
-
-    //     // Grab the current primary selection
-    //     const sel = tmpSelections[0];
-
-    //     // Change the current selection array to contain a single item
-    //     // that encompasses the entire pasted block.
-    //     e.selections = [sel];
-
-    //     // Send the pasted value to the system clipboard.
-    //     commands.executeCommand("editor.action.clipboardCopyAction").then(() => {
-    //       setTimeout(() => {
-    //         // Restore the previous selection(s)
-    //         e.selections = tmpSelections;
-
-    //         // Format the selection, if enabled
-    //         if (this._formatAfterPaste) {
-    //           commands.executeCommand("editor.action.formatSelection").then(() => {
-    //             setTimeout(function() {
-    //               lastRange = new Range(e.selection.start, e.selection.end);
-    //             }, 100);
-    //           });
-    //         } else {
-    //           lastRange = new Range(e.selection.start, e.selection.end);
-    //         }
-    //       }, 100);
-    //     });
-    //   }, 100);
-    // });
   }
 
   // from: https://github.com/ow--/vscode-subword-navigation/blob/master/src/commands.ts

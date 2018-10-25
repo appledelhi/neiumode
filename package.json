@@ -46,6 +46,11 @@
         "command": "extension.backspace",
         "key": "Backspace",
         "when": "editorTextFocus"
+      },
+      {
+        "command": "closeFindWidget",
+        "key": "home",
+        "when": "editorFocus && findWidgetVisible"
       }
     ]
   },
@@ -62,5 +67,8 @@
     "vscode": "^1.1.16",
     "@types/node": "^9.6.7",
     "@types/mocha": "^5.2.0"
+  },
+  "dependencies": {
+    "clipboardy": "^1.2.3"
   }
 }

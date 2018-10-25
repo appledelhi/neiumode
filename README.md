@@ -14,6 +14,10 @@ one for executing commands and one for entering texts(like `vi`). You toggle bet
 Command mode layout
 ![Command mode layout](images/keyboard.png)
 
+## TODO
+
+- Copy deleted text command to clipboard.
+
 ## Key bindings
 
 | key             | description                                                                                          |
