@@ -27,7 +27,7 @@ export class ModalEditor {
   private _statusBar: Disposable;
   private _currentCommand: (any) => void;
   private _lastCommands: Array<any>;
-  private _lastPos: Position;
+  private _newCommands: boolean;
   private _replaying: boolean;
   private _formatAfterPaste: boolean;
   private _eol: string;
@@ -40,7 +40,6 @@ export class ModalEditor {
     this._modal = true;
     this._currentCommand = this.handleCommands;
     this._lastCommands = [];
-    this._lastPos = editor.selection.active;
     this._replaying = false;
     this._searchWord = "";
     let config = workspace.getConfiguration("editor", editor.document.uri);
@@ -52,9 +51,7 @@ export class ModalEditor {
 
   handleType(args) {
     if (!this._modal) {
-      commands.executeCommand("default:type", args).then(_ => {
-        this._lastPos = this._editor.selection.active;
-      });
+      commands.executeCommand("default:type", args);
       this.recordCommand(false, args.text);
       return;
     }
@@ -69,7 +66,7 @@ export class ModalEditor {
     this._currentCommand({ text: "^H" });
   }
 
-  handleCommands(args: any) {
+  async handleCommands(args: any) {
     switch (args.text) {
       case "^H":
         commands.executeCommand("deleteLeft", args);
@@ -102,12 +99,10 @@ export class ModalEditor {
         this.gotoHandleSelectCommands();
         break;
       case "e":
-        commands.executeCommand("cursorDown");
+        this.moveCommand("cursorDown");
         break;
       case "f":
-        commands.executeCommand("deleteWordLeft").then(_ => {
-          this._lastPos = this._editor.selection.active;
-        });
+        commands.executeCommand("deleteWordLeft");
         this.recordCommand(true, "t");
         break;
       case "g":
@@ -115,45 +110,45 @@ export class ModalEditor {
         this.recordCommand(true, args.text);
         break;
       case "h":
-        commands.executeCommand("cursorHome");
+        this.moveCommand("cursorHome");
         break;
       case "i":
-        commands.executeCommand("cursorRight");
+        this.moveCommand("cursorRight");
         break;
       case "j":
-        commands.executeCommand("cursorPageUp");
+        this.moveCommand("cursorPageUp");
         break;
       case "J":
-        commands.executeCommand("cursorTop");
+        this.moveCommand("cursorTop");
         break;
       case "k":
-        commands.executeCommand("cursorPageDown");
+        this.moveCommand("cursorPageDown");
         break;
       case "K":
-        commands.executeCommand("cursorBottom");
+        this.moveCommand("cursorBottom");
         break;
       case "l":
         this.cursorSubword(this._editor, nextBoundaryLeft, this.move);
         break;
       case "n":
-        commands.executeCommand("cursorLeft");
+        this.moveCommand("cursorLeft");
         break;
       case "o":
-        commands.executeCommand("cursorEnd");
+        this.moveCommand("cursorEnd");
         break;
       case "r":
         this.repeatCommands();
         break;
       case "s":
         this.recordCommand(true, args.text);
-        this.deleteCommand(false);
+        await this.deleteCommand(false);
         break;
       case "t":
         this.recordCommand(true, args.text);
-        this.deleteCommand(true);
+        await this.deleteCommand(true);
         break;
       case "u":
-        commands.executeCommand("cursorUp");
+        this.moveCommand("cursorUp");
         break;
       case "v":
         this.pasteCommand();
@@ -166,18 +161,23 @@ export class ModalEditor {
         break;
       case "z":
         commands.executeCommand("undo");
+        this._newCommands = true;
         break;
       case "Z":
         commands.executeCommand("redo");
+        this._newCommands = true;
         break;
       case "/":
         commands.executeCommand("actions.find");
+        this._newCommands = true;
         break;
       case "*":
         commands.executeCommand("actions.findWithSelection");
+        this._newCommands = true;
         break;
       case ".":
         this.findNext();
+        this._newCommands = true;
         break;
       default:
         commands.executeCommand("default:type", args);
@@ -322,6 +322,11 @@ export class ModalEditor {
     this._statusBar = window.setStatusBarMessage(msg);
   }
 
+  moveCommand(command) {
+    commands.executeCommand(command);
+    this._newCommands = true;
+  }
+
   copyCommand() {
     if (this._editor.selection.isEmpty) {
       let merge = this._lastCommand == "c" ? true : false;
@@ -333,6 +338,7 @@ export class ModalEditor {
       clipboard.writeSync(ModalEditor._copyBuffer);
       commands.executeCommand("cancelSelection");
     }
+    this._newCommands = true;
   }
 
   cutCommand() {
@@ -344,21 +350,23 @@ export class ModalEditor {
     commands.executeCommand("editor.action.clipboardCutAction").then(() => {
       clipboard.writeSync(ModalEditor._copyBuffer);
     });
+    this._newCommands = true;
   }
 
   pasteCommand() {
     commands.executeCommand("editor.action.clipboardPasteAction");
     commands.executeCommand("cancelSelection");
+    this._newCommands = true;
   }
 
-  deleteCommand(word: boolean) {
+  async deleteCommand(word: boolean) {
     let document = this._editor.document;
     let position = this._editor.selection.active;
     let nextPos = word ? nextBoundaryRight(document, position) : position.translate(0, 1);
     let range = new Range(this._editor.selection.active, nextPos);
     this._searchWord += document.getText(range);
 
-    this._editor.edit(builder => {
+    await this._editor.edit(builder => {
       builder.delete(range);
     });
   }
@@ -367,27 +375,26 @@ export class ModalEditor {
     if (this._replaying) {
       return;
     }
-    if (this._editor.selection.active != this._lastPos) {
+    if (this._newCommands) {
       this._lastCommands = [];
       this._searchWord = "";
+      this._newCommands = false;
     }
     this._lastCommands.push({ command: isCommand, text: text });
-    this._lastPos = this._editor.selection.active;
   }
 
-  repeatCommands() {
+  async repeatCommands() {
     this._replaying = true;
     this.showStatusBar("length " + this._lastCommands.length);
-    this._lastCommands.forEach(arg => {
-      if (arg.command) {
-        this.handleCommands(arg);
+    for (let command of this._lastCommands) {
+      if (command.command) {
+        await this.handleCommands(command);
       } else {
-        commands.executeCommand("default:type", arg);
+        commands.executeCommand("default:type", command);
       }
-    });
+    }
     this._replaying = false;
-    // position to reset command buffer
-    this._lastPos = new Position(0, 0);
+    this._newCommands = true;
   }
 
   findNext() {
@@ -493,6 +500,7 @@ export class ModalEditor {
   cursorSubword(editor: TextEditor, next: BoundaryFunc, sel: SelectionFunc) {
     editor.selections = editor.selections.map(s => sel(s, next(editor.document, s.active)));
     this.reveal(editor);
+    this._newCommands = true;
   }
 
   reveal(editor: TextEditor) {
