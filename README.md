@@ -14,10 +14,6 @@ one for executing commands and one for entering texts(like `vi`). You toggle bet
 Command mode layout
 ![Command mode layout](images/keyboard.png)
 
-## TODO
-
-- Copy deleted text command to clipboard.
-
 ## Key bindings
 
 | key             | description                                                                                          |
@@ -110,6 +106,11 @@ word in files.
 
 - `l`/`y` commands move cursor by subword.
 - `.` command finds characters deleted last by `f`/`s` command.
+
+### 0.7.1
+
+- Deleted texts by command `t`/`s`/`f` are copied to clipboard.
+- `c`/`x` commands use system clipboard.
 
 ## Acknowledgment
 

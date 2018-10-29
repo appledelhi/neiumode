@@ -45,3 +45,8 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 - `l`/`y` commands move cursor by subword.
 - `.` command finds characters deleted last by `f`/`s` command.
+
+## [0.7.1]
+
+- Deleted texts by command `t`/`s`/`f` are copied to clipboard.
+- `c`/`x` commands use system clipboard.
